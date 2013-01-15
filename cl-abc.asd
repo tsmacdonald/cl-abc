@@ -2,9 +2,9 @@
 
 (asdf:defsystem #:cl-abc
   :serial t
-  :description "Describe cl-abc here"
-  :author "Your Name <your.name@example.com>"
-  :license "Specify license here"
+  :description "A library that provides a CLOS API for parsing, manipulating, and producing files in ABC notation.""
+  :author "Tim Macdonald <tsmacdonald@gmail.com>""
+  :license "TODO"
   :depends-on (#:cl-ppcre)
   :components ((:file "package")
                (:file "cl-abc")))
