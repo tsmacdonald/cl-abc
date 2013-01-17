@@ -45,6 +45,9 @@
 
 (eval
  `(defclass metainformation ()
-	 (,@(loop for property in *metainformation-fields*
-		collecting (list property :initarg property :accessor (read-from-string (concatenate 'string "tune-" (symbol-name property))))))
+	 ,(loop for property in *metainformation-fields*
+		collecting (list property
+				 :initarg (intern (symbol-name property) :keyword)
+				 :accessor (values (intern (string-upcase (concatenate 'string "tune-"
+								(symbol-name property)))))))
 	 (:documentation "Describes the metainformation (title, key signature, etc.) of a tune")))
