@@ -8,24 +8,43 @@
 					 source symbol-line title user-defined voice
 					 end-words inline-words reference-number transcription))
 
+(defconstant +note-regex+ "[^=_]*[A-Ga-g][,']*[/0-9]") ;;FIXME - This can't possibly be sufficient
+
 (let ((*metainformation-slot-forms* 
        (loop for property in *metainformation-fields*
 	  collecting (list property
 			   :initarg (intern (symbol-name property) :keyword)
 			   :initform nil
-			   :accessor (values (intern (string-upcase (concatenate 'string "tune-" (symbol-name property)))))))))
+			   :accessor (values (intern (string-upcase (concatenate 'string "tune-"
+										 (symbol-name property)))))))))
   (eval
    `(defclass tune ()
       (,@*metainformation-slot-forms*
        (melody :initarg :melody :initform '() :accessor tune-melody))
-      (:documentation "Fooooooo"))))
+      (:documentation "Represents a tune, with metainformation and a list of its measures"))))
+
+;; Tune contains metainformation and the melody, a list of measures
+;; Each measure has a list of beats
+;; Each beat has a list of notes
+;; Each note has a length and a pitch
+;; Each pitch has a note value, accidental, and octave
+
+(defclass measure ()
+  ((beats :initarg :beats :initform '() :accessor beats)))
+
+(defclass beat ()
+  ((notes :initarg :notes :initform '() :accessor notes)))
 
 (defclass note ()
-  ((value :initarg :value :reader note-value)
-   (octave :initarg :octave :reader note-octave)
-   (accidental :initarg :accidental :initform 'natural :reader note-accidental)
+  ((pitch :initarg :pitch :reader note-pitch)
    (duration :initarg :duration :initform 1/8 :reader note-duration))
   (:documentation "Represents a note."))
+
+(defclass pitch ()
+  ((note :initarg :note :reader pitch-value)
+   (accidental :initarg :accidental :initform 'n :reader pitch-accidental)
+   (octave :initarg :octave :reader pitch-octave)))
+
 
 (defun make-tune ()
   "Creates an empty tune."
@@ -96,12 +115,21 @@
     (remove-whitespace (remove-comments line))))
 
 
-(defun parse-body (line) ;; FIXME
-  (list (make-instance 'note :value 'C :octave 4) (make-instance 'note :value 'D :octave 4)))
+(defun parse-body (tune raw-body)
+  (let ((measures (cl-ppcre:split "\\s*|\\s*" raw-body)))
+    (setf (tune-melody tune) (mapcar #'parse-notes measures))))
+
+(defun parse-notes (measure)
+  (mapcar #'parse-note (cl-ppcre:all-matches-as-strings +note-regex+ measure)))
+
+(defun parse-note (note)
+  ;;TODO
+)
 
 (defun parse-file (filename)
   "Main entry point to parse a given file. Returns a TUNE item."
-  (let ((tune (make-tune)))
+  (let ((tune (make-tune))
+	(body ""))
     (with-open-file (file filename
 			  :direction :input)
       (loop for line = (clean-line (read-line file nil))
@@ -109,6 +137,6 @@
 	   (format t "Parsing {~a}~&" line)
 	   (if (headerp line)
 	       (add-metainformation tune line)
-	       (add-melody-notes tune (parse-body line)))))
-    tune))
+	       (setq body (concatenate 'string body line)))))
+    (parse-body tune body)))
 	   
