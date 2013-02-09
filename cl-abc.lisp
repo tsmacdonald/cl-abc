@@ -8,31 +8,29 @@
 					 source symbol-line title user-defined voice
 					 end-words inline-words reference-number transcription))
 
-(defconstant +note-regex+ "[^=_]*[A-Ga-g][,']*[/0-9]") ;;FIXME - This can't possibly be sufficient
+;Should be defconstant, but SBCL is ridiculous
+(defparameter +note-regex+ "[\\^=_]*[A-Ga-g][,']*[/0-9]*"
+  "Regular expression that's supposed to capture one ABC note, with appropriate affixes")
+
+(defmacro if-not (test then &optional else)
+  `(if (not ,test) ,then ,else))
 
 (let ((*metainformation-slot-forms* 
        (loop for property in *metainformation-fields*
 	  collecting (list property
 			   :initarg (intern (symbol-name property) :keyword)
 			   :initform nil
-			   :accessor (values (intern (string-upcase (concatenate 'string "tune-"
-										 (symbol-name property)))))))))
+			   :accessor (values
+				      (intern
+				       (string-upcase (concatenate 'string "tune-"
+								   (symbol-name property)))))))))
   (eval
    `(defclass tune ()
       (,@*metainformation-slot-forms*
        (melody :initarg :melody :initform '() :accessor tune-melody))
       (:documentation "Represents a tune, with metainformation and a list of its measures"))))
 
-;; Tune contains metainformation and the melody, a list of measures
-;; Each measure has a list of beats
-;; Each beat has a list of notes
-;; Each note has a length and a pitch
-;; Each pitch has a note value, accidental, and octave
-
 (defclass measure ()
-  ((beats :initarg :beats :initform '() :accessor beats)))
-
-(defclass beat ()
   ((notes :initarg :notes :initform '() :accessor notes)))
 
 (defclass note ()
@@ -116,15 +114,29 @@
 
 
 (defun parse-body (tune raw-body)
-  (let ((measures (cl-ppcre:split "\\s*|\\s*" raw-body)))
-    (setf (tune-melody tune) (mapcar #'parse-notes measures))))
+  (format t "~&Parsing tune: {~a}" raw-body)
+  (let ((measures (cl-ppcre:split "\\s*\\|+\\s*" raw-body)))
+    (setf (tune-melody tune) (mapcar (lambda (ms) (parse-notes tune ms)) measures)))
+  tune)
 
-(defun parse-notes (measure)
-  (mapcar #'parse-note (cl-ppcre:all-matches-as-strings +note-regex+ measure)))
+(defun parse-notes (tune measure)
+  (format t "~&Parsing measure: {~a}" measure)
+  (mapcar (lambda (m) (parse-note tune m)) (cl-ppcre:all-matches-as-strings +note-regex+ measure)))
 
-(defun parse-note (note)
-  ;;TODO
-)
+(defun parse-note (tune note)
+  (format t "~&Parsing note: {~a}" note)
+  (cl-ppcre:register-groups-bind (prefixes note octave-designator suffixes)
+      ("(.*)([A-Ga-g])([,']*)(.*)" note) ;; FIXME
+    (let* ((starting-octave (if (upper-case-p (char note 0)) 4 5))
+	   (designator-length (length octave-designator))
+	   (modifier (if-not (zerop designator-length)
+	     (* (length octave-designator)
+		(if (string-equal (subseq octave-designator 0 1) "'")
+		    1
+		    -1))
+	     0))
+	  (octave (+ starting-octave modifier)))
+      (make-instance 'note :pitch (make-instance 'pitch :octave octave :note (string-upcase note))))))
 
 (defun parse-file (filename)
   "Main entry point to parse a given file. Returns a TUNE item."
