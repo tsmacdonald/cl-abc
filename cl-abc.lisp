@@ -31,7 +31,8 @@
       (:documentation "Represents a tune, with metainformation and a list of its measures"))))
 
 (defclass measure ()
-  ((notes :initarg :notes :initform '() :accessor notes)))
+  ((notes :initarg :notes :initform '() :accessor notes))
+  (:documentation "Represents a measure of music; contains a sequence of notes."))
 
 (defclass note ()
   ((pitch :initarg :pitch :reader note-pitch)
@@ -41,7 +42,8 @@
 (defclass pitch ()
   ((note :initarg :note :reader pitch-value)
    (accidental :initarg :accidental :initform 'n :reader pitch-accidental)
-   (octave :initarg :octave :reader pitch-octave)))
+   (octave :initarg :octave :reader pitch-octave))
+  (:documentation "Represents a pitch using scientific pitch notation."))
 
 
 (defun make-tune ()
@@ -50,6 +52,7 @@
 
 
 (defun headerp (line)
+  "Tests if the line is a header or not."
   (when (cl-ppcre:scan "[ABCDFGHIKLMmNOPQRrSsTUVWwXZ]:.*" line)
       line))
 
@@ -102,9 +105,11 @@
     (when config (setq *settings* (read config)))))
 
 (defun remove-comments (line)
+  "Returns a copy of the line with comments removed."
   (cl-ppcre:regex-replace "%.*" line ""))
 
 (defun remove-whitespace (line)
+  "Returns a copy of the line with unnecessary whitespace removed."
   (cl-ppcre:regex-replace "\\s*$" (cl-ppcre:regex-replace "^\\s*" line "") ""))
 
 (defun clean-line (line)
@@ -114,32 +119,65 @@
 
 
 (defun parse-body (tune raw-body)
+  "Parses the entire musical section of a tune; returns a tune object."
   (format t "~&Parsing tune: {~a}" raw-body)
   (let ((measures (cl-ppcre:split "\\s*\\|+\\s*" raw-body)))
     (setf (tune-melody tune) (mapcar (lambda (ms) (parse-notes tune ms)) measures)))
   tune)
 
 (defun parse-notes (tune measure)
+  "Parses a given measure of music; returns a list of notes."
   (format t "~&Parsing measure: {~a}" measure)
   (mapcar (lambda (m) (parse-note tune m)) (cl-ppcre:all-matches-as-strings +note-regex+ measure)))
 
 (defun parse-note (tune note)
+  "Parses a given note, returns a note object."
+  (declare (ignore tune))
   (format t "~&Parsing note: {~a}" note)
   (cl-ppcre:register-groups-bind (prefixes note octave-designator suffixes)
       ("(.*)([A-Ga-g])([,']*)(.*)" note) ;; FIXME
-    (let* ((starting-octave (if (upper-case-p (char note 0)) 4 5))
-	   (designator-length (length octave-designator))
-	   (modifier (if-not (zerop designator-length)
-	     (* designator-length
-		(if (string-equal (subseq octave-designator 0 1) "'")
-		    1
-		    -1))
-	     0))
-	  (octave (+ starting-octave modifier)))
-      (make-instance 'note :pitch (make-instance 'pitch :octave octave :note (string-upcase note))))))
+    (declare (ignore prefixes suffixes))
+    (let*
+	((starting-octave (if (upper-case-p (char note 0)) 4 5))
+	 (designator-length (length octave-designator))
+	 (modifier (if-not (zerop designator-length)
+			   (* designator-length
+			      (if (string-equal (subseq octave-designator 0 1) "'")
+				  1
+				  -1))
+			   0))
+	 (octave (+ starting-octave modifier))
+	 (note-sym (intern (string-upcase note)))
+	 (new-accidental
+	  (cond
+	    ((cl-ppcre:scan "\\^" prefixes) 's)
+	    ((cl-ppcre:scan "\\^\\^" prefixes) (error "No support for double sharps"))
+	    ((cl-ppcre:scan "__"  prefixes) (error "No support for double flats"))
+	    ((cl-ppcre:scan "_" prefixes) 'f)
+	    ((cl-ppcre:scan "=" prefixes) 'n)))
+	 (accidental (or new-accidental (get-accidental-for note-sym (tune-key tune)))))
+      (make-instance 'note :pitch (make-instance 'pitch :octave octave :note note-sym :accidental accidental)))))
 
+(defun get-accidental-for (note key)
+  (let* ((circle-of-fifths '(C G D A E B F# Db Ab Eb Bb F))
+	 (sharps '(F C G D A E B))
+	 (flats (reverse sharps)))
+    (cl-ppcre:register-groups-bind (raw-key mode)
+	("([A-G][#b]?)(m?)" key)
+      (let* ((sharp-count (position (intern (string-upcase raw-key)) circle-of-fifths))
+	     (minorp (string-equal mode "m"))
+	     (flatp (or (> sharp-count 6) (and minorp (< sharp-count 3))))
+	     (accidental-list (if flatp flats sharps))
+	     (accidental-count (funcall (if flatp #'+ #'- )
+					(if-not flatp sharp-count (mod (- 12 sharp-count) 12))
+					(if minorp 3 0)))
+	     (note-position (position note accidental-list)))
+	(if (>= note-position accidental-count)
+	    'n
+	    (if flatp 'f 's))))))
+	     
 (defun parse-file (filename)
-  "Main entry point to parse a given file. Returns a TUNE item."
+  "Main entry point to parse a given file. Returns a tune object."
   (let ((tune (make-tune))
 	(body ""))
     (with-open-file (file filename
@@ -152,3 +190,9 @@
 	       (setq body (concatenate 'string body line)))))
     (parse-body tune body)))
 	   
+(defun print-note (note)
+  (format nil "~a~a" (pitch-value (note-pitch note)) (pitch-octave (note-pitch note))))
+
+(defun print-tune (tune)
+  "Quick hack to print a tune"
+  (format t "~{~{~a~^ ~}~^ | ~}" (mapcar (lambda (x) (mapcar #'print-note x)) (tune-melody tune))))
