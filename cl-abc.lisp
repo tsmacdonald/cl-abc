@@ -130,7 +130,7 @@
     (let* ((starting-octave (if (upper-case-p (char note 0)) 4 5))
 	   (designator-length (length octave-designator))
 	   (modifier (if-not (zerop designator-length)
-	     (* (length octave-designator)
+	     (* designator-length
 		(if (string-equal (subseq octave-designator 0 1) "'")
 		    1
 		    -1))
