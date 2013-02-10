@@ -1,6 +1,6 @@
 (in-package #:cl-abc)
 
-(defparameter *config-filename* "~/src/cl-abc/config.lisp" "Path of the configuration file") ;;FIXME!
+(defparameter *config-filename* "~/src/cl-abc/config.lisp" "Path of the configuration file")
 (defparameter *settings* '(:filenames ()) "Stores necessary settings (and also sets the defaults)")
 (defparameter *metainformation-fields* '(area book composer discography file-url group
 					 history instruction key unit-note-length meter
