@@ -135,7 +135,7 @@
   (declare (ignore tune))
   (format t "~&Parsing note: {~a}" note)
   (cl-ppcre:register-groups-bind (prefixes note octave-designator suffixes)
-      ("(.*)([A-Ga-g])([,']*)(.*)" note) ;; FIXME
+      ("(.*)([A-Ga-g])([,']*)(.*)" note)
     (declare (ignore prefixes suffixes))
     (let*
 	((starting-octave (if (upper-case-p (char note 0)) 4 5))
