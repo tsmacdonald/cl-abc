@@ -134,7 +134,7 @@
   "Parses a given note, returns a note object."
   (format t "~&Parsing note: {~a}" note)
   (cl-ppcre:register-groups-bind (prefixes note octave-designator suffixes)
-      ("(.*)([A-Ga-g])([,']*)(.*)" note) ;; FIXME
+      ("(.*)([A-Ga-g])([,']*)(.*)" note)
     (let*
 	((starting-octave (if (upper-case-p (char note 0)) 4 5))
 	 (designator-length (length octave-designator))
