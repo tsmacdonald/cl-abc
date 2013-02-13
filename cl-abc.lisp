@@ -36,7 +36,7 @@
 
 (defclass note ()
   ((pitch :initarg :pitch :reader note-pitch)
-   (duration :initarg :duration :initform 1/8 :reader note-duration))
+   (duration :initarg :length :initform 1/8 :reader note-length))
   (:documentation "Represents a note."))
 
 (defclass pitch ()
@@ -132,11 +132,9 @@
 
 (defun parse-note (tune note)
   "Parses a given note, returns a note object."
-  (declare (ignore tune))
   (format t "~&Parsing note: {~a}" note)
   (cl-ppcre:register-groups-bind (prefixes note octave-designator suffixes)
       ("(.*)([A-Ga-g])([,']*)(.*)" note) ;; FIXME
-    (declare (ignore prefixes suffixes))
     (let*
 	((starting-octave (if (upper-case-p (char note 0)) 4 5))
 	 (designator-length (length octave-designator))
@@ -155,8 +153,10 @@
 	    ((cl-ppcre:scan "__"  prefixes) (error "No support for double flats"))
 	    ((cl-ppcre:scan "_" prefixes) 'f)
 	    ((cl-ppcre:scan "=" prefixes) 'n)))
-	 (accidental (or new-accidental (get-accidental-for note-sym (tune-key tune)))))
-      (make-instance 'note :pitch (make-instance 'pitch :octave octave :note note-sym :accidental accidental)))))
+	 (accidental (or new-accidental (get-accidental-for note-sym (tune-key tune))))
+	 (length (* (tune-unit-note-length tune) (if (string-equal suffixes "") 1 (parse-integer suffixes)))))
+	   
+      (make-instance 'note :length length :pitch (make-instance 'pitch :octave octave :note note-sym :accidental accidental)))))
 
 (defun get-accidental-for (note key)
   (let* ((circle-of-fifths '(C G D A E B F# Db Ab Eb Bb F))
