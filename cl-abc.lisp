@@ -8,8 +8,7 @@
 					 source symbol-line title user-defined voice
 					 end-words inline-words reference-number transcription))
 
-;Should be defconstant, but SBCL is ridiculous
-(defparameter +note-regex+ "[\\^=_]*[A-Ga-g][,']*[/0-9]*"
+(defparameter +note-regex+ "[\\^=_]*[A-Ga-g][,']*[/0-9]*" ;Should be defconstant, but SBCL is ridiculous
   "Regular expression that's supposed to capture one ABC note, with appropriate affixes")
 
 (defmacro if-not (test then &optional else)
@@ -45,11 +44,9 @@
    (octave :initarg :octave :reader pitch-octave))
   (:documentation "Represents a pitch using scientific pitch notation."))
 
-
 (defun make-tune ()
   "Creates an empty tune."
   (make-instance 'tune))
-
 
 (defun headerp (line)
   "Tests if the line is a header or not."
@@ -117,7 +114,6 @@
   (when line
     (remove-whitespace (remove-comments line))))
 
-
 (defun parse-body (tune raw-body)
   "Parses the entire musical section of a tune; returns a tune object."
   (format t "~&Parsing tune: {~a}" raw-body)
@@ -155,7 +151,6 @@
 	    ((cl-ppcre:scan "=" prefixes) 'n)))
 	 (accidental (or new-accidental (get-accidental-for note-sym (tune-key tune))))
 	 (length (* (tune-unit-note-length tune) (if (string-equal suffixes "") 1 (parse-note-length suffixes)))))
-	   
       (make-instance 'note :length length :pitch (make-instance 'pitch :octave octave :note note-sym :accidental accidental)))))
 
 (defun parse-note-length (raw)
