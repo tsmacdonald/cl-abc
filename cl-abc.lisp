@@ -72,7 +72,7 @@
 	(#\H (setf (tune-history tune) content))
 	(#\I (setf (tune-instruction tune) content))
 	(#\K (setf (tune-key tune) content))
-	(#\L (setf (tune-unit-note-length tune) content))
+	(#\L (setf (tune-unit-note-length tune) (read-from-string content)))
 	(#\M (setf (tune-meter tune) content))
 	(#\m (setf (tune-macro tune) content))
 	(#\N (setf (tune-notes tune) content))
@@ -154,9 +154,14 @@
 	    ((cl-ppcre:scan "_" prefixes) 'f)
 	    ((cl-ppcre:scan "=" prefixes) 'n)))
 	 (accidental (or new-accidental (get-accidental-for note-sym (tune-key tune))))
-	 (length (* (tune-unit-note-length tune) (if (string-equal suffixes "") 1 (parse-integer suffixes)))))
+	 (length (* (tune-unit-note-length tune) (if (string-equal suffixes "") 1 (parse-note-length suffixes)))))
 	   
       (make-instance 'note :length length :pitch (make-instance 'pitch :octave octave :note note-sym :accidental accidental)))))
+
+(defun parse-note-length (raw)
+  (if (cl-ppcre:scan "/+" raw)
+      (expt 1/2 (length raw))
+      (parse-integer raw)))
 
 (defun get-accidental-for (note key)
   (let* ((circle-of-fifths '(C G D A E B F# Db Ab Eb Bb F))
@@ -191,7 +196,7 @@
     (parse-body tune body)))
 	   
 (defun print-note (note)
-  (format nil "~a~a" (pitch-value (note-pitch note)) (pitch-octave (note-pitch note))))
+  (format nil "~a~a[~a]" (pitch-value (note-pitch note)) (pitch-octave (note-pitch note)) (note-length note)))
 
 (defun print-tune (tune)
   "Quick hack to print a tune"
