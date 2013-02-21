@@ -1,6 +1,6 @@
 (in-package #:cl-abc)
 
-(defparameter *config-filename* "~/src/cl-abc/config.lisp" "Path of the configuration file") ;;FIXME!
+(defparameter *config-filename* "~/src/cl-abc/config.lisp" "Path of the configuration file")
 (defparameter *settings* '(:filenames ()) "Stores necessary settings (and also sets the defaults)")
 (defparameter *metainformation-fields* '(area book composer discography file-url group
 					 history instruction key unit-note-length meter
@@ -8,8 +8,7 @@
 					 source symbol-line title user-defined voice
 					 end-words inline-words reference-number transcription))
 
-;Should be defconstant, but SBCL is ridiculous
-(defparameter +note-regex+ "[\\^=_]*[A-Ga-g][,']*[/0-9]*"
+(defparameter +note-regex+ "[\\^=_]*[A-Ga-g][,']*[/0-9]*" ;Should be defconstant, but SBCL is ridiculous
   "Regular expression that's supposed to capture one ABC note, with appropriate affixes")
 
 (defmacro if-not (test then &optional else)
@@ -36,7 +35,7 @@
 
 (defclass note ()
   ((pitch :initarg :pitch :reader note-pitch)
-   (duration :initarg :duration :initform 1/8 :reader note-duration))
+   (duration :initarg :length :initform 1/8 :reader note-length))
   (:documentation "Represents a note."))
 
 (defclass pitch ()
@@ -45,11 +44,9 @@
    (octave :initarg :octave :reader pitch-octave))
   (:documentation "Represents a pitch using scientific pitch notation."))
 
-
 (defun make-tune ()
   "Creates an empty tune."
   (make-instance 'tune))
-
 
 (defun headerp (line)
   "Tests if the line is a header or not."
@@ -72,7 +69,7 @@
 	(#\H (setf (tune-history tune) content))
 	(#\I (setf (tune-instruction tune) content))
 	(#\K (setf (tune-key tune) content))
-	(#\L (setf (tune-unit-note-length tune) content))
+	(#\L (setf (tune-unit-note-length tune) (read-from-string content)))
 	(#\M (setf (tune-meter tune) content))
 	(#\m (setf (tune-macro tune) content))
 	(#\N (setf (tune-notes tune) content))
@@ -117,7 +114,6 @@
   (when line
     (remove-whitespace (remove-comments line))))
 
-
 (defun parse-body (tune raw-body)
   "Parses the entire musical section of a tune; returns a tune object."
   (format t "~&Parsing tune: {~a}" raw-body)
@@ -132,11 +128,9 @@
 
 (defun parse-note (tune note)
   "Parses a given note, returns a note object."
-  (declare (ignore tune))
   (format t "~&Parsing note: {~a}" note)
   (cl-ppcre:register-groups-bind (prefixes note octave-designator suffixes)
-      ("(.*)([A-Ga-g])([,']*)(.*)" note) ;; FIXME
-    (declare (ignore prefixes suffixes))
+      ("(.*)([A-Ga-g])([,']*)(.*)" note)
     (let*
 	((starting-octave (if (upper-case-p (char note 0)) 4 5))
 	 (designator-length (length octave-designator))
@@ -155,8 +149,14 @@
 	    ((cl-ppcre:scan "__"  prefixes) (error "No support for double flats"))
 	    ((cl-ppcre:scan "_" prefixes) 'f)
 	    ((cl-ppcre:scan "=" prefixes) 'n)))
-	 (accidental (or new-accidental (get-accidental-for note-sym (tune-key tune)))))
-      (make-instance 'note :pitch (make-instance 'pitch :octave octave :note note-sym :accidental accidental)))))
+	 (accidental (or new-accidental (get-accidental-for note-sym (tune-key tune))))
+	 (length (* (tune-unit-note-length tune) (if (string-equal suffixes "") 1 (parse-note-length suffixes)))))
+      (make-instance 'note :length length :pitch (make-instance 'pitch :octave octave :note note-sym :accidental accidental)))))
+
+(defun parse-note-length (raw)
+  (if (cl-ppcre:scan "/+" raw)
+      (expt 1/2 (length raw))
+      (parse-integer raw)))
 
 (defun get-accidental-for (note key)
   (let* ((circle-of-fifths '(C G D A E B F# Db Ab Eb Bb F))
@@ -191,7 +191,7 @@
     (parse-body tune body)))
 	   
 (defun print-note (note)
-  (format nil "~a~a" (pitch-value (note-pitch note)) (pitch-octave (note-pitch note))))
+  (format nil "~a~a[~a]" (pitch-value (note-pitch note)) (pitch-octave (note-pitch note)) (note-length note)))
 
 (defun print-tune (tune)
   "Quick hack to print a tune"
