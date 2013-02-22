@@ -8,7 +8,7 @@
 					 source symbol-line title user-defined voice
 					 end-words inline-words reference-number transcription))
 
-(defparameter +note-regex+ "[\\^=_]*[A-Ga-g][,']*[/0-9]*" ;Should be defconstant, but SBCL is ridiculous
+(defparameter +note-regex+ "(\\^{0,2}|=?|_{0,2})([A-Ga-g])(,*|'*)([/0-9]*)" ;Should be defconstant, but SBCL is ridiculous
   "Regular expression that's supposed to capture one ABC note, with appropriate affixes")
 
 (defmacro if-not (test then &optional else)
@@ -129,8 +129,10 @@
 (defun parse-note (tune note)
   "Parses a given note, returns a note object."
   (format t "~&Parsing note: {~a}" note)
+  (unless (cl-ppcre:scan (concatenate 'string "^" +note-regex+ "$") note)
+    (error "Invalid note syntax: ~a" note))
   (cl-ppcre:register-groups-bind (prefixes note octave-designator suffixes)
-      ("(.*)([A-Ga-g])([,']*)(.*)" note)
+      (+note-regex+ note)
     (let*
 	((starting-octave (if (upper-case-p (char note 0)) 4 5))
 	 (designator-length (length octave-designator))
@@ -144,14 +146,18 @@
 	 (note-sym (intern (string-upcase note)))
 	 (new-accidental
 	  (cond
+	    ((cl-ppcre:scan "\\^{2}" prefixes) (error "No support for double sharps"))
 	    ((cl-ppcre:scan "\\^" prefixes) 's)
-	    ((cl-ppcre:scan "\\^\\^" prefixes) (error "No support for double sharps"))
 	    ((cl-ppcre:scan "__"  prefixes) (error "No support for double flats"))
 	    ((cl-ppcre:scan "_" prefixes) 'f)
 	    ((cl-ppcre:scan "=" prefixes) 'n)))
 	 (accidental (or new-accidental (get-accidental-for note-sym (tune-key tune))))
-	 (length (* (tune-unit-note-length tune) (if (string-equal suffixes "") 1 (parse-note-length suffixes)))))
-      (make-instance 'note :length length :pitch (make-instance 'pitch :octave octave :note note-sym :accidental accidental)))))
+	 (length (* (tune-unit-note-length tune) (if (string-equal suffixes "")
+						     1
+						     (parse-note-length suffixes)))))
+      (make-instance 'note :length length
+		     :pitch (make-instance 'pitch :octave octave
+					   :note note-sym :accidental accidental)))))
 
 (defun parse-note-length (raw)
   (if (cl-ppcre:scan "/+" raw)
