@@ -202,3 +202,6 @@
 (defun print-tune (tune)
   "Quick hack to print a tune"
   (format t "~{~{~a~^ ~}~^ | ~}" (mapcar (lambda (x) (mapcar #'print-note x)) (tune-melody tune))))
+
+(defun make-sample-tune ()
+  (make-instance 'tune :unit-note-length 1/8 :title "Foobar" :key "C"))
