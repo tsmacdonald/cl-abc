@@ -101,6 +101,13 @@
 			  :if-does-not-exist nil)
     (when config (setq *settings* (read config)))))
 
+(defmacro remove-from-body (regex line &optional (replacement ""))
+  "If the line is part of the tune body, replaces `regex' with
+   `replacement'. Otherwise returns the line unchanged."
+  `(if-not (headerp ,line)
+	   (cl-ppcre:regex-replace-all ,regex ,line ,replacement)
+	   ,line))
+
 (defun remove-comments (line)
   "Returns a copy of the line with comments removed."
   (cl-ppcre:regex-replace "%.*" line ""))
@@ -109,10 +116,33 @@
   "Returns a copy of the line with unnecessary whitespace removed."
   (cl-ppcre:regex-replace "\\s*$" (cl-ppcre:regex-replace "^\\s*" line "") ""))
 
+(defun remove-grace-notes (line)
+  "Returns a copy of the line with all gracenotes (and their surrounding braces) removed."
+  (remove-from-body "{.*?}" line))
+
+(defun remove-ornaments (line)
+  "Returns a copy of the line with all ornaments removed."
+  (remove-from-body "(!.*?!)|~" line))
+
+(defun remove-inline-part (line)
+  "Returns a copy of the line with all inline second parts (noted by an ampersand) removed."
+  (remove-from-body "&.*?\\|" line "|"))
+
+(defun flatten-chords (line)
+  "Returns a copy of the line with all chords replaced by their last note."
+  (remove-from-body
+   (concatenate 'string "\\[(" +note-regex+ ")*?(" +note-regex+ ")\\]")
+   line
+   "\\7"))
+
+(defun remove-chord-letters (line)
+  "Returns a copy of the line with all chord letters (or textual notes) removed."
+  (remove-from-body "\".*?\"" line))
+
 (defun clean-line (line)
-  "Removes unnecessary whitespace and comments."
+  "Removes unnecessary whitespace and comments. Also removes unsupported features."
   (when line
-    (remove-whitespace (remove-comments line))))
+    (remove-chord-letters (flatten-chords (remove-ornaments (remove-grace-notes (remove-inline-part (remove-whitespace (remove-comments line)))))))))
 
 (defun parse-body (tune raw-body)
   "Parses the entire musical section of a tune; returns a tune object."
