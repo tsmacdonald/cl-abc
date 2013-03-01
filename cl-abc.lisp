@@ -8,8 +8,11 @@
 					 source symbol-line title user-defined voice
 					 end-words inline-words reference-number transcription))
 
-(defparameter +note-regex+ "(\\^{0,2}|=?|_{0,2})([A-Ga-g])(,*|'*)([/0-9]*)" ;Should be defconstant, but SBCL is ridiculous
+(defparameter +note-regex+ "(\\^{0,2}|=?|_{0,2})([A-Ga-g])(,*|'*)([/0-9]*)(<|>)?" ;Should be defconstant, but SBCL is ridiculous
   "Regular expression that's supposed to capture one ABC note, with appropriate affixes")
+
+(defparameter *dottedness* '(1 . 1)
+  "Coefficients for the current and next note lengths.")
 
 (defmacro if-not (test then &optional else)
   `(if (not ,test) ,then ,else))
@@ -156,12 +159,20 @@
   (format t "~&Parsing measure: {~a}" measure)
   (mapcar (lambda (m) (parse-note tune m)) (cl-ppcre:all-matches-as-strings +note-regex+ measure)))
 
+(defun parse-accidental (accidentals)
+  (cond
+    ((cl-ppcre:scan "\\^{2}" accidentals) (error "No support for double sharps"))
+    ((cl-ppcre:scan "\\^" accidentals) 's)
+    ((cl-ppcre:scan "__"  accidentals) (error "No support for double flats"))
+    ((cl-ppcre:scan "_" accidentals) 'f)
+    ((cl-ppcre:scan "=" accidentals) 'n)))
+
 (defun parse-note (tune note)
   "Parses a given note, returns a note object."
   (format t "~&Parsing note: {~a}" note)
   (unless (cl-ppcre:scan (concatenate 'string "^" +note-regex+ "$") note)
     (error "Invalid note syntax: ~a" note))
-  (cl-ppcre:register-groups-bind (prefixes note octave-designator suffixes)
+  (cl-ppcre:register-groups-bind (prefixes note octave-designator suffixes dotted-indicator)
       (+note-regex+ note)
     (let*
 	((starting-octave (if (upper-case-p (char note 0)) 4 5))
@@ -174,18 +185,19 @@
 			   0))
 	 (octave (+ starting-octave modifier))
 	 (note-sym (intern (string-upcase note)))
-	 (new-accidental
-	  (cond
-	    ((cl-ppcre:scan "\\^{2}" prefixes) (error "No support for double sharps"))
-	    ((cl-ppcre:scan "\\^" prefixes) 's)
-	    ((cl-ppcre:scan "__"  prefixes) (error "No support for double flats"))
-	    ((cl-ppcre:scan "_" prefixes) 'f)
-	    ((cl-ppcre:scan "=" prefixes) 'n)))
+	 (new-accidental (parse-accidental prefixes))
 	 (accidental (or new-accidental (get-accidental-for note-sym (tune-key tune))))
 	 (length (* (tune-unit-note-length tune) (if (string-equal suffixes "")
 						     1
 						     (parse-note-length suffixes)))))
-      (make-instance 'note :length length
+      (setf *dottedness*
+	    (cond
+	      ((or (null dotted-indicator)
+		   (string-equal dotted-indicator ""))
+	       (cons (cdr *dottedness*) 1))
+	      ((string-equal dotted-indicator ">") '(3/2 . 1/2))
+	      ((string-equal dotted-indicator "<") '(1/2 . 3/2))))
+      (make-instance 'note :length (* length (car *dottedness*))
 		     :pitch (make-instance 'pitch :octave octave
 					   :note note-sym :accidental accidental)))))
 
