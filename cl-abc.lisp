@@ -62,7 +62,7 @@
 (defmethod add-metainformation ((tune tune) (line string))
   (when (headerp line)
     (cl-ppcre:register-groups-bind (field content) ("(.)\\s*:\\s*(.*)" line)
-      (case (coerce field 'character)
+      (case (character field)
 	(#\A (setf (tune-area tune) content))
 	(#\B (setf (tune-book tune) content))
 	(#\C (setf (tune-composer tune) content))
@@ -243,7 +243,7 @@
 
 (defun print-tune (tune)
   "Quick hack to print a tune"
-  (format t "~{~{~a~^ ~}~^ | ~}" (mapcar (lambda (x) (mapcar #'print-note x)) (tune-melody tune))))
+  (format t "~&~{~{~a~^ ~}~^ | ~}" (mapcar (lambda (x) (mapcar #'print-note x)) (tune-melody tune))))
 
 (defun make-sample-tune ()
   (make-instance 'tune :unit-note-length 1/8 :title "Foobar" :key "C"))
