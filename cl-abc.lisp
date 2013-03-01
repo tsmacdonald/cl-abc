@@ -85,7 +85,7 @@
 	(#\s (setf (tune-symbol-line tune) content))
 	(#\T (setf (tune-title tune) content))
 	(#\U (setf (tune-user-defined tune) content))
-	(#\V (setf (tune-voice tune) content))
+	(#\V (setf (tune-voice tune) (parse-integer content)))
 	(#\W (setf (tune-end-words tune) content))
 	(#\w (setf (tune-inline-words tune) content))
 	(#\X (setf (tune-reference-number tune) content))
@@ -232,6 +232,8 @@
 			  :direction :input)
       (loop for line = (clean-line (read-line file nil))
 	 while line do
+	   (when (> (or (tune-voice tune) 0) 1)
+	       (return))
 	   (format t "Parsing {~a}~&" line)
 	   (if (headerp line)
 	       (add-metainformation tune line)
