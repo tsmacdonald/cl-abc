@@ -6,21 +6,6 @@
 %%alias:Marshall-1845
 %%Title:William Marshall's Scottish Melodies, Reels, Strathspeys volume 2nd (1845)
 
-<p align='center'>
-Volume 2nd <br/>
-of a Collection of  <br/>
-Scottish Melodies Reels Strathspeys <br/>
-Jigs Slow Airs <br/>
-for the <br/>
-Piano Forte <br/>
-Violin and Violoncello <br/>
-Being the Genuine & <br/>
-Posthumous Works of <br/>
-William Marshall <br/>
- <br/>
-All the Airs in this collection are now published for the first time
-</p>
-
 X: 105
 T:Colonel W. Marshall of the 79th Regiment of Foot
 B:William Marshall Volume 2nd Of A Collection Of Scottish Melodies (1845)
@@ -499,8 +484,8 @@ K:F
 V:1
 fc ~!=!c2 dB ~B2 & F2 x2 F4 | bagf (eg) ~!=!c2 & d4 x4 | \
 fc ~!=!c2 (dB)Bd & F4    F4 | c>BAG F2 F2 & E4 A,2 A,2 :| \
-Ffef dBBd & F4 F4 | Gg^fg ecce | ! Ffef dBBd | c>BAG  F2 F2 & F2 B,2 A,2 A,2 |\
-Ffef dBBd & F4 F4 | Gg^fg ecce |   Ffef dBBd | c>BA>G F2 F2 & F2 B,2 A,2 A,2 |]
+Ffef dBBd & F4 F4 | Gg^fg ecce |  Ffef dBBd | c>BAG  F2 F2 & F2 B,2 A,2 A,2 |\
+Ffef dBBd & F4 F4 | Gg^fg ecce |  Ffef dBBd | c>BA>G F2 F2 & F2 B,2 A,2 A,2 |]
 V:2 middle=d clef=bass
 L:1/4
 [Ff] [Aa] [Bb] [Bb] | [Gg] [=B=b] [cc'] [cc']  | [Aa] [Ff] [Bb] [Bb] | [cc'] [cc'] [Ff] [Ff] :| \
@@ -1837,7 +1822,7 @@ K:C
 %%staves {1 2}
 V:1
 [Ec]2 cG [Ec]2 cG | c2 cG {^c}d2 de | c2 cG EcGE | FDB,G, [G,C]2 [G,C]2 :| \
-gege afaf | gece d2 (de) | ! gege afaf | ecGB c2 (ce) | \
+gege afaf | gece d2 (de) | gege afaf | ecGB c2 (ce) | \
 gege afaf | edge d2 (df) | egfa dfeg | BGdB [Ec]2 [Ec]2 & F2G2x4  |]
 V:2 middle=d clef=bass
 L:1/4
@@ -2047,7 +2032,7 @@ K:F
 %%staves{1 2}
 V:1
 ~!=!c2 (AB) ~!=!c2 (AB) | cagf ec ~!=!c2 | d2 Bd c2 Ac | GdcB (AF) ~F2 :| \
-af ~f2 cfAf | defg af ~f2 | ! bg ~!=!g2 dg=Bg | efga bg ~!=!g2 | \
+af ~f2 cfAf | defg af ~f2 | bg ~!=!g2 dg=Bg | efga bg ~!=!g2 | \
 af f2 cfAf | defg afcA | BdBd AcAc | GdcB AFF2 & F2 E2 C2 A,2 |]
 V:2 middle=d clef=bass
 L:1/4

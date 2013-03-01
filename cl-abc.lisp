@@ -85,7 +85,7 @@
 	(#\s (setf (tune-symbol-line tune) content))
 	(#\T (setf (tune-title tune) content))
 	(#\U (setf (tune-user-defined tune) content))
-	(#\V (setf (tune-voice tune) (parse-integer content)))
+	(#\V (setf (tune-voice tune) (parse-integer content :junk-allowed t)))
 	(#\W (setf (tune-end-words tune) content))
 	(#\w (setf (tune-inline-words tune) content))
 	(#\X (setf (tune-reference-number tune) content))
@@ -225,21 +225,33 @@
 	    (if flatp 'f 's))))))
 	     
 (defun parse-file (filename)
-  "Main entry point to parse a given file. Returns a tune object."
-  (let ((tune (make-tune))
-	(body ""))
+  "Main entry point to parse a given file. Returns a list of tune objects."
+  (let ((tunes '())
+	(tune (make-tune))
+	(body "")
+	(skipping nil))
     (with-open-file (file filename
 			  :direction :input)
       (loop for line = (clean-line (read-line file nil))
 	 while line do
-	   (when (> (or (tune-voice tune) 0) 1)
-	       (return))
-	   (format t "Parsing {~a}~&" line)
+	   (format t "~&Parsing line: {~a}~&" line)
 	   (if (headerp line)
-	       (add-metainformation tune line)
-	       (setq body (concatenate 'string body line)))))
-    (parse-body tune body)))
-	   
+	       (progn
+		 (when (and (cl-ppcre:scan "\\s*X\\s*:" line) (string-not-equal body ""))
+		   (push (parse-body tune body) tunes)
+		   (setq tune (make-tune))
+		   (setq body "")
+		   (setq skipping nil))
+		 (format t "Skipping: ~a" skipping)
+		 (unless skipping (add-metainformation tune line))
+		 (when (> (or (tune-voice tune) 0) 1)
+		     (setq skipping t)))
+	       (unless skipping (setq body (concatenate 'string body line))))))
+    (format t "~&L: ~a" (tune-unit-note-length tune))
+    (push (parse-body tune body) tunes)
+    (nreverse tunes)))
+
+
 (defun print-note (note)
   (format nil "~a~a[~a]" (pitch-value (note-pitch note)) (pitch-octave (note-pitch note)) (note-length note)))
 
