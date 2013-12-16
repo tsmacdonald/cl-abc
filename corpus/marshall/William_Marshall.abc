@@ -6,13 +6,6 @@
 %%alias:WmMarshall
 %%Title:William Marshall
 
-<p>These tunes were originally contributed in 2005 by Clark Bernst. More recently, I've been revising them to add in Marshall's bass parts, plus some ornaments that got missed in the original transcriptions. "Scottish Melodies ... vol. 2nd" is not finished yet (the unrevised tunes are the ones still listed under this collection), the other 3 are completed.
-</p>
-
-
-This material, and more, is also available in real paper book form from Fiddlecase books, as <a href="http://www.randymillerprints.com/Marshallbook.html">William Marshall's Scottish melodies, 2nd edition</a>. This latter includes 2 more collections of tunes than there are here, and much useful information and other Good Stuff (also, it won't become inaccessible when the battery runs out). You'll notice that the PDF links for these won't get you the whole lot on paper, they just result in a suggestion to buy the book instead. This is because a Real Paper Book is still a good and useful thing, and I don't want to weaken the people who make them.
-</p>
-
 X: 2
 T:Capt Charles Gordon, R.N., Huntly
 B:William Marshall Volume 2nd Of A Collection Of Scottish Melodies (1845)
@@ -27,7 +20,7 @@ F:http://richardrobinson.tunebook.org.uk/tune/3845
 %%TBL:{"version":1,"type":"tune","id":"3845"}
 K:A
 Q:1/4     %Tempo
-E  [| \
+E  | \
 A/A3/2 A3/2A/ G3/2B/ G3/2E/ | A/A3/2 A3/2A/ c3/2e/ c3/2A/ | \
 (3def (3edc B2 GE | F/G/A/F/ G/A/B/G/ A2 A2 |
 (3cea (3edc B2 GE | (3cea (3ecG (3Afe (3c3/2B/A | \

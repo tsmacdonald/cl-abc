@@ -25,7 +25,8 @@
 			   :accessor (values
 				      (intern
 				       (string-upcase (concatenate 'string "tune-"
-								   (symbol-name property)))))))))
+								   (symbol-name property)))
+				       :cl-abc))))))
   (eval
    `(defclass tune ()
       (,@*metainformation-slot-forms*
@@ -150,7 +151,7 @@
 (defun parse-body (tune raw-body)
   "Parses the entire musical section of a tune; returns a tune object."
   (format t "~&Parsing tune: {~a}" raw-body)
-  (let ((measures (cl-ppcre:split "\\s*\\|+\\s*" raw-body)))
+  (let ((measures (cl-ppcre:split "\\s*(\\|+|::)\\s*" raw-body)))
     (setf (tune-melody tune) (mapcar (lambda (ms) (parse-notes tune ms)) measures)))
   tune)
 
@@ -184,7 +185,7 @@
 				  -1))
 			   0))
 	 (octave (+ starting-octave modifier))
-	 (note-sym (intern (string-upcase note)))
+	 (note-sym (intern (string-upcase note) :cl-abc))
 	 (new-accidental (parse-accidental prefixes))
 	 (accidental (or new-accidental (get-accidental-for note-sym (tune-key tune))))
 	 (length (* (tune-unit-note-length tune) (if (string-equal suffixes "")
@@ -212,7 +213,7 @@
 	 (flats (reverse sharps)))
     (cl-ppcre:register-groups-bind (raw-key mode)
 	("([A-G][#b]?)(m?)" key)
-      (let* ((sharp-count (position (intern (string-upcase raw-key)) circle-of-fifths))
+      (let* ((sharp-count (position (intern (string-upcase raw-key) :cl-abc) circle-of-fifths))
 	     (minorp (string-equal mode "m"))
 	     (flatp (or (> sharp-count 6) (and minorp (< sharp-count 3))))
 	     (accidental-list (if flatp flats sharps))
